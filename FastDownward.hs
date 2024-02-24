@@ -445,7 +445,7 @@ data SolveResult a
   | InputError
     -- ^ The @downward@ executable encountered an error parsing input.
   | Unsupported
-    -- ^ The @downward@ executable was called with a search engine that is
+    -- ^ The @downward@ executable was called with a search algoritm that is
     -- incompatible with the problem definition.
   | Crashed String String ExitCode
     -- ^ Fast Downward crashed (or otherwise rejected) the given problem.
@@ -473,7 +473,7 @@ totallyOrderedPlan Solution{..} =
   map ( operators IntMap.! ) stepIndices
 
 
--- | Given a particular 'Exec.SearchEngine', attempt to solve a planning
+-- | Given a particular 'Exec.SearchAlgorithm', attempt to solve a planning
 -- problem.
 solve
   :: Show a
@@ -758,7 +758,7 @@ resetInitial var a = do
 -- succeeds when at least one of the given tests is true.
 --
 -- __Caution!__ The use of @any@ introduces /axioms/ into the problem definition,
--- which is not compatible with many search engines.
+-- which is not compatible with many search algorithms.
 any :: [ Test ] -> Test
 any =
   Any

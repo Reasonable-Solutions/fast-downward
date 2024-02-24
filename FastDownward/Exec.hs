@@ -7,11 +7,11 @@ module FastDownward.Exec
   , SearchConfiguration(..)
   , callFastDownward
 
-    -- * Predefined Search Engines
+    -- * Predefined Search Algorithms
   , bjolp
 
-    -- * Search Engines
-  , SearchEngine(..)
+    -- * Search Algorithms
+  , SearchAlgorithm(..)
   , AStarConfiguration(..)
   , EagerBestFirstConfiguration(..)
   , EagerGreedyConfiguration(..)
@@ -261,7 +261,7 @@ data Options =
 
 data SearchConfiguration =
   SearchConfiguration
-    { search :: SearchEngine
+    { search :: SearchAlgorithm
     , evaluators :: [ ( String, Evaluator ) ]
     }
 
@@ -307,8 +307,8 @@ callFastDownward Options{ fastDownward, problem, planFilePath, searchConfigurati
   return ( exitCode, Data.Text.Lazy.unpack stdout, Data.Text.Lazy.unpack stderr )
 
 
--- | See <http://www.fast-downward.org/Doc/SearchEngine>
-data SearchEngine
+-- | See <http://www.fast-downward.org/Doc/SearchAlgorithm>
+data SearchAlgorithm
   = AStar AStarConfiguration
   | EagerBestFirst EagerBestFirstConfiguration
   | EagerGreedy EagerGreedyConfiguration
@@ -319,7 +319,7 @@ data SearchEngine
   | LazyWeightedAStar LazyWeightedAStarConfiguration
 
 
-searchEngineToExpr :: SearchEngine -> Expr
+searchEngineToExpr :: SearchAlgorithm -> Expr
 searchEngineToExpr =
   \case
     AStar cfg ->
@@ -347,7 +347,7 @@ searchEngineToExpr =
       lazyWAStar cfg
 
 
--- | See <http://www.fast-downward.org/Doc/SearchEngine#A.2A_search_.28eager.29>
+-- | See <http://www.fast-downward.org/Doc/SearchAlgorithm#A.2A_search_.28eager.29>
 data AStarConfiguration =
   AStarConfiguration
     { evaluator :: Evaluator
@@ -372,7 +372,7 @@ aStar AStarConfiguration{ evaluator, lazyEvaluator, pruning, costType, bound, ma
     ]
 
 
--- | See <http://www.fast-downward.org/Doc/SearchEngine#Eager_best-first_search>
+-- | See <http://www.fast-downward.org/Doc/SearchAlgorithm#Eager_best-first_search>
 data EagerBestFirstConfiguration =
   EagerBestFirstConfiguration
     { open :: OpenList
@@ -401,7 +401,7 @@ eager EagerBestFirstConfiguration{ open, reopenClosed, fEval, preferred, pruning
     ]
 
 
--- | See <http://www.fast-downward.org/Doc/SearchEngine#Greedy_search_.28eager.29>
+-- | See <http://www.fast-downward.org/Doc/SearchAlgorithm#Greedy_search_.28eager.29>
 data EagerGreedyConfiguration =
   EagerGreedyConfiguration
     { evaluators :: [ Evaluator ]
@@ -428,7 +428,7 @@ eagerGreedy EagerGreedyConfiguration{ evaluators, preferred, boost, pruning, cos
     ]
 
 
--- | See <http://www.fast-downward.org/Doc/SearchEngine#Lazy_enforced_hill-climbing>
+-- | See <http://www.fast-downward.org/Doc/SearchAlgorithm#Lazy_enforced_hill-climbing>
 data EnforcedHillClimbingConfiguration =
   EnforcedHillClimbingConfiguration
     { h :: Evaluator
@@ -453,10 +453,10 @@ ehc EnforcedHillClimbingConfiguration{ h, preferredUsage, preferred, costType, b
     ]
 
 
--- | See <http://www.fast-downward.org/Doc/SearchEngine#Iterated_search>
+-- | See <http://www.fast-downward.org/Doc/SearchAlgorithm#Iterated_search>
 data IteratedConfiguration =
   IteratedConfiguration
-    { engines :: [ SearchEngine ]
+    { algorithms :: [ SearchAlgorithm ]
     , passBound :: Bool
     , repeatLast :: Bool
     , continueOnFail :: Bool
@@ -468,10 +468,10 @@ data IteratedConfiguration =
 
 
 iterated :: IteratedConfiguration -> Expr
-iterated IteratedConfiguration{ engines, passBound, repeatLast, continueOnFail, continueOnSolve, costType, bound, maxTime } =
+iterated IteratedConfiguration{ algorithms, passBound, repeatLast, continueOnFail, continueOnSolve, costType, bound, maxTime } =
   App
     "iterated"
-    [ List ( map searchEngineToExpr engines ) ]
+    [ List ( map searchEngineToExpr algorithms ) ]
     [ ( "pass_bound", boolToExpr passBound )
     , ( "repeat_last", boolToExpr repeatLast )
     , ( "continue_on_fail", boolToExpr continueOnFail )
@@ -482,7 +482,7 @@ iterated IteratedConfiguration{ engines, passBound, repeatLast, continueOnFail, 
     ]
 
 
--- | See <http://www.fast-downward.org/Doc/SearchEngine#Lazy_best-first_search>
+-- | See <http://www.fast-downward.org/Doc/SearchAlgorithm#Lazy_best-first_search>
 data LazyBestFirstConfiguration =
   LazyBestFirstConfiguration
     { open :: OpenList
@@ -513,7 +513,7 @@ lazy LazyBestFirstConfiguration{ open, reopenClosed, preferred, randomizeSuccess
     ]
 
 
--- | See <http://www.fast-downward.org/Doc/SearchEngine#Greedy_search_.28lazy.29>
+-- | See <http://www.fast-downward.org/Doc/SearchAlgorithm#Greedy_search_.28lazy.29>
 data LazyGreedyConfiguration =
   LazyGreedyConfiguration
     { evaluators :: [ Evaluator ]
@@ -546,7 +546,7 @@ lazyGreedy LazyGreedyConfiguration{ evaluators, preferred, reopenClosed, boost, 
     ]
 
 
--- | See <http://www.fast-downward.org/Doc/SearchEngine#A.28Weighted.29_A.2A_search_.28lazy.29>
+-- | See <http://www.fast-downward.org/Doc/SearchAlgorithm#A.28Weighted.29_A.2A_search_.28lazy.29>
 data LazyWeightedAStarConfiguration =
   LazyWeightedAStarConfiguration
     { evaluators :: [ Evaluator ]
@@ -726,7 +726,7 @@ data CostType
     -- ^ All actions are accounted for as their real cost + 1 (except if all
     -- actions have original cost 1, in which case cost 1 is used). This is the
     -- behaviour known for the heuristics of the LAMA planner. This is intended
-    -- to be used by the heuristics, not search engines, but is supported for
+    -- to be used by the heuristics, not search algorithms, but is supported for
     -- both.
   deriving
     ( Show )
