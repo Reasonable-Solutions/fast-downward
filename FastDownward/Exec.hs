@@ -269,22 +269,23 @@ data SearchConfiguration =
 
 callFastDownward :: MonadIO m => Options -> m ( ExitCode, String, String )
 callFastDownward Options{ fastDownward, problem, planFilePath, searchConfiguration = SearchConfiguration{ search, evaluators } } = liftIO $ do
-  ( Just writeProblemHandle, Just stdoutHandle, Just stderrHandle, processHandle ) <-
-    createProcess
-      ( proc
-          fastDownward
-          ( concat
+  let args = ( concat
               [ [ "--internal-plan-file", planFilePath ]
               , concatMap
                   ( \( name, def ) ->
-                      [ "--evaluator"
+                      [ "--search let("
                       , name <> "=" <> exprToString ( evaluatorToExpr def )
                       ]
                   )
                   evaluators
-              , [ "--search", exprToString ( searchEngineToExpr search ) ]
+              , [exprToString ( searchEngineToExpr search ) <> ")" ]
               ]
-          )
+           )
+  print args
+  ( Just writeProblemHandle, Just stdoutHandle, Just stderrHandle, processHandle ) <-
+    createProcess
+      ( proc
+          fastDownward args
       )
       { std_in = CreatePipe
       , std_out = CreatePipe
@@ -1045,21 +1046,30 @@ data LMCountConfiguration =
     , cacheEstimates :: Bool
     }
 
-
 lmcount :: LMCountConfiguration -> Expr
 lmcount LMCountConfiguration{ lmFactory, admissible, optimal, pref, alm, lpSolver, transform, cacheEstimates } =
-  App
-    "lmcount"
-    [ landmarkFactoryToExpr lmFactory ]
-    [ ( "admissible", boolToExpr admissible )
-    , ( "optimal", boolToExpr optimal )
-    , ( "pref", boolToExpr pref )
-    , ( "alm", boolToExpr alm )
-    , lpSolverOption lpSolver
-    , transformExpr transform
-    , cacheEstimatesExpr cacheEstimates
-    ]
+  case admissible of
+      True ->  App
+        "landmark_sum"
+        [ landmarkFactoryToExpr lmFactory ]
+        [ ( "optimal", boolToExpr optimal )
+        , ( "pref", boolToExpr pref )
+        , ( "alm", boolToExpr alm )
+        , lpSolverOption lpSolver
+        , transformExpr transform
+        , cacheEstimatesExpr cacheEstimates
+        ]
 
+      False ->  App
+        "landmark_cost_partitioning"
+         [ landmarkFactoryToExpr lmFactory ]
+         [ ( "optimal", boolToExpr optimal )
+         , ( "pref", boolToExpr pref )
+         , ( "alm", boolToExpr alm )
+         , lpSolverOption lpSolver
+         , transformExpr transform
+         , cacheEstimatesExpr cacheEstimates
+         ]
 
 -- | See <http://www.fast-downward.org/Doc/Evaluator#Landmark-cut_heuristic>
 data LMCutConfiguration =
