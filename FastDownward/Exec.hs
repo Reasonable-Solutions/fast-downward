@@ -255,26 +255,19 @@ data SearchConfiguration = SearchConfiguration
 callFastDownward :: (MonadIO m) => Options -> m (ExitCode, String, String)
 callFastDownward Options{fastDownward, problem, planFilePath, searchConfiguration = SearchConfiguration{search, evaluators}} = liftIO $ do
     let args =
-            [ "--internal-plan-file"
-            , planFilePath
-            , "--search"
-            , "let("
-                <> intercalate
-                    ", "
-                    ( map
-                        ( \(name, def) ->
-                            name
-                                <> "="
-                                <> exprToString (evaluatorToExpr def)
-                        )
-                        evaluators
-                    )
-                <> ", "
-                <> exprToString (searchEngineToExpr search)
-                <> ")"
-            ]
+            concat
+                [ ["--internal-plan-file", planFilePath]
+                ,
+                    [ "--search"
+                    , "let("
+                        <> intercalate ", " (map (\(name, def) -> name <> "=" <> exprToString (evaluatorToExpr def)) evaluators)
+                        <> ", "
+                        <> exprToString (searchEngineToExpr search)
+                        <> ")"
+                    ]
+                ]
 
-    print args
+    print $ intercalate " " args
     print $ show planFilePath
     (Just writeProblemHandle, Just stdoutHandle, Just stderrHandle, processHandle) <-
         createProcess
